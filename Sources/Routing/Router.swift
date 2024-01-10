@@ -1,3 +1,5 @@
+import SafariServices
+import StoreKit
 import SwiftUI
 
 public protocol PathItem: Hashable {}
@@ -34,6 +36,23 @@ public extension Router {
     func view(forPathItem _: EmptyPathItem) -> EmptyView { EmptyView() }
     func view(forSheetItem _: EmptySheetItem) -> EmptyView { EmptyView() }
     func view(forFullScreenCoverItem _: EmptyFullScreenCoverItem) -> EmptyView { EmptyView() }
+
+    func presentSafariViewController(with url: URL, completion: (() -> Void)? = nil) {
+        let vc = SFSafariViewController(url: url)
+        vc.preferredControlTintColor = .tintColor
+        UIApplication.shared.activeWindowScene?
+            .keyWindow?
+            .rootViewController?
+            .present(vc, animated: true, completion: completion)
+    }
+
+    func requestReview() {
+        #if !DEBUG
+            if let activeWindowScene = UIApplication.shared.activeWindowScene {
+                SKStoreReviewController.requestReview(in: activeWindowScene)
+            }
+        #endif
+    }
 }
 
 @MainActor public extension View {
@@ -63,4 +82,13 @@ public struct RouterStack<StackRouter: Router, Content: View>: View {
 
     private let content: () -> Content
     @Binding var router: StackRouter
+}
+
+extension UIApplication {
+    var activeWindowScene: UIWindowScene? {
+        connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .filter { $0.activationState == .foregroundActive }
+            .first
+    }
 }
